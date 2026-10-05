@@ -4,9 +4,25 @@ execdirs :=  cnet/gdeliveryd/ cnet/glinkd/ cnet/gamedbd/ cnet/gfaction/ cnet/log
 
 skilldir :=   cskill/skill/
 build_targets := libperf subs subsskill libs gs
+package_dir := dist
+package_file := $(package_dir)/PWServer-$(shell git rev-parse --short HEAD).tar.gz
 
 all: $(build_targets)
 build: $(build_targets)
+package: build
+	@set -eu; \
+	mkdir -p "$(package_dir)"; \
+	list="$$(mktemp)"; \
+	trap 'rm -f "$$list"' EXIT HUP INT TERM; \
+	find cnet cgame -type f -exec sh -c '\
+		for file do \
+			if file -b "$$file" | grep -qE "ELF .* (executable|shared object)"; then \
+				printf "%s\\0" "$$file"; \
+			fi; \
+		done' sh {} + > "$$list"; \
+	test -s "$$list"; \
+	tar --null --no-recursion -czf "$(package_file)" --files-from="$$list"; \
+	echo "Created $(package_file)"
 clean: clean-libperf clean-subs clean-subsskill  clean-libs clean-gs
 
 makegs: libperf subsskill libs gs
@@ -75,7 +91,7 @@ clean-gs:
 	make clean; \
 	cd ..;
 
-.PHONY: rpcgen
+.PHONY: all build package clean configure clean-configure makegs cleangs makecnet cleancnet libs clean-libs install libperf clean-libperf libcommon clean-libcommon libgs clean-gs rpcgen setrules configure-shared configure-iolib clean-shared clean-iolib
 
 setrules:
 	bash ./setrules.sh;

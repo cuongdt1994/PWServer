@@ -9,28 +9,29 @@ Server Source Code Repository
 - libxml2-dev:i386
 - libssl-dev:i386
 - libpcre3-dev:i386
-- libssl1.0-dev:i386
 - make
-## To install i386 packages in Ubuntu
-- sudo dpkg --add-architecture i386
-- sudo apt update
-## To install libssl1.0-dev:i386 in Ubuntu
-- Add the following source to aptitude source list.
-- - deb http://security.ubuntu.com/ubuntu bionic-security main
-    
 ## Build safely
 
 Run the commands below from the repository root inside Ubuntu/WSL. Do not build from
 PowerShell or from a Windows checkout where Linux symlinks are unavailable.
 
 ```bash
-make configure
-make -j1
+bash ./install-deps.sh       # first time only
+bash ./build-package.sh
 ```
 
 `make configure` updates `cgame/Rules.make`, creates the generated symlinks and
 `iolib` directory, and does not remove regular files. `make` builds the binaries
-but does not install or strip them.
+but does not install or strip them. `build-package.sh` also creates one archive at
+`dist/PWServer-<commit>.tar.gz`; it contains only built ELF executables/shared
+libraries, not source files or object files.
+
+To run the steps manually:
+
+```bash
+make configure
+make package
+```
 
 ## Optional install
 

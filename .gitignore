@@ -3,6 +3,7 @@
 cgame/gs/config/
 *.so
 .vscode/
+dist/
 cnet/gamedbd/dbhomewdb/
 cnet/uniquenamed/unamewdb/
 cnet/common
