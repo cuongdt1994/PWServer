@@ -1,12 +1,9 @@
 # PWServer
 
-==== MODIFICADO POR ALIEN =====
-Alterar caminho do IOPATH e BASEPATH em cgame/Rules.make
-
 Server Source Code Repository
 
 ## Build Requirements:
-- Ubuntu 20 (recommended) 
+- Ubuntu 20 (recommended; use WSL/Docker on Windows)
 - gcc9.3 
 - libxml-dom-perl
 - libxml2-dev:i386
@@ -21,19 +18,24 @@ Server Source Code Repository
 - Add the following source to aptitude source list.
 - - deb http://security.ubuntu.com/ubuntu bionic-security main
     
-## Setup
-- chmod 777 build.sh
-- chmod 777 setrules.sh
-- chmod 777 gfaction/operations/opgen.pl;
-- chmod 777 rpcgen
-- chmod 777 rpc/xmlcoder.pl
+## Build safely
 
-## First time Build:
-- make configure
+Run the commands below from the repository root inside Ubuntu/WSL. Do not build from
+PowerShell or from a Windows checkout where Linux symlinks are unavailable.
 
-## Afterwards:
-- make
+```bash
+make configure
+make -j1
+```
 
-## To copy binaries to server folder
-- Open makefile and edit 'install' target path as desired, defaults to /pwserver
-- run: make install 
+`make configure` updates `cgame/Rules.make`, creates the generated symlinks and
+`iolib` directory, and does not remove regular files. `make` builds the binaries
+but does not install or strip them.
+
+## Optional install
+
+Review the `install` target in `Makefile` first, then run:
+
+```bash
+make install
+```

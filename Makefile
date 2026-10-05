@@ -3,14 +3,16 @@ execdirs :=  cnet/gdeliveryd/ cnet/glinkd/ cnet/gamedbd/ cnet/gfaction/ cnet/log
 				cnet/uniquenamed/
 
 skilldir :=   cskill/skill/
+build_targets := libperf subs subsskill libs gs
 
-all: libperf subs subsskill libs gs install
+all: $(build_targets)
+build: $(build_targets)
 clean: clean-libperf clean-subs clean-subsskill  clean-libs clean-gs
 
-makegs: libperf subsskill libs gs install
+makegs: libperf subsskill libs gs
 cleangs: clean-libperf clean-subsskill clean-libs clean-gs
 
-makecnet: libperf subs install
+makecnet: libperf subs
 cleancnet: clean-libperf clean-subs
 
 configure: setrules configure-shared configure-iolib
@@ -19,7 +21,7 @@ clean-configure: clean-shared clean-iolib
 libs: libgs libcommon
 clean-libs: clean-libgs clean-libcommon 
 
-install:
+install: build
 	#strip -g -S -d --strip-debug --strip-unneeded --keep-file-symbols ./cgame/gs/gs; \
 	cp ./cgame/gs/gs /home/gamed; \
 	strip -g -S -d --strip-debug --strip-unneeded --keep-file-symbols ./cgame/gs/libtask.so; \
@@ -88,50 +90,56 @@ clean-gs:
 .PHONY: rpcgen
 
 setrules:
-	./setrules.sh; 
+	bash ./setrules.sh;
 	
-configure-shared: clean-shared
+
+configure-shared:
+	@set -eu; \
 	cd cnet; \
-	ln -s ../share/common/ .; \
-	ln -s ../share/io/ .; \
-	ln -s ../share/perf/ .; \
-	ln -s ../share/mk/ .; \
-	ln -s ../share/storage/ .; \
-	ln -s ../share/rpc/ .; \
-	ln -s ../share/rpcgen .; \
-	cd ..;
-	
-configure-iolib: clean-iolib
-	mkdir -p iolib; \
-	cd iolib; \
-	mkdir -p inc; \
-	cd inc; \
-	ln -s ../../cnet/gamed/auctionsyslib.h; \
-	ln -s ../../cnet/gamed/sysauctionlib.h; \
-	ln -s ../../cnet/gdbclient/db_if.h; \
-	ln -s ../../cnet/gamed/factionlib.h; \
-	ln -s ../../cnet/common/glog.h; \
-	ln -s ../../cnet/gamed/gsp_if.h; \
-	ln -s ../../cnet/gamed/mailsyslib.h; \
-	ln -s ../../cnet/gamed/privilege.hxx; \
-	ln -s ../../cnet/gamed/sellpointlib.h; \
-	ln -s ../../cnet/gamed/stocklib.h; \
-	ln -s ../../cnet/gamed/webtradesyslib.h; \
-	ln -s ../../cnet/gamed/kingelectionsyslib.h; \
-	ln -s ../../cnet/gamed/pshopsyslib.h; \
-	cd .. ; \
-	ln -s ../cnet/io/libgsio.a; \
-	ln -s ../cnet/gdbclient/libdbCli.a; \
-	ln -s ../cnet/gamed/libgsPro2.a; \
-	ln -s ../cnet/logclient/liblogCli.a; \
-	ln -s ../cskill/skill/libskill.a; \
-	cd ..;
+	for name in common io perf mk storage rpc; do \
+		if [ -e "$$name" ] && [ ! -L "$$name" ]; then \
+			echo "ERROR: cnet/$$name exists and is not a symlink; refusing to replace it."; \
+			exit 1; \
+		fi; \
+		ln -sfn "../share/$$name" "$$name"; \
+	done
+
+configure-iolib:
+	@set -eu; \
+	mkdir -p iolib/inc; \
+	find iolib/inc -mindepth 1 -maxdepth 1 -type l -delete; \
+	find iolib -mindepth 1 -maxdepth 1 -type l -name 'lib*' -delete; \
+	link() { \
+		if [ -e "$$2" ] && [ ! -L "$$2" ]; then \
+			echo "ERROR: $$2 exists and is not a symlink; refusing to replace it."; \
+			exit 1; \
+		fi; \
+		ln -sfn "$$1" "$$2"; \
+	}; \
+	link ../../cnet/gamed/auctionsyslib.h iolib/inc/auctionsyslib.h; \
+	link ../../cnet/gamed/sysauctionlib.h iolib/inc/sysauctionlib.h; \
+	link ../../cnet/gdbclient/db_if.h iolib/inc/db_if.h; \
+	link ../../cnet/gamed/factionlib.h iolib/inc/factionlib.h; \
+	link ../../cnet/common/glog.h iolib/inc/glog.h; \
+	link ../../cnet/gamed/gsp_if.h iolib/inc/gsp_if.h; \
+	link ../../cnet/gamed/mailsyslib.h iolib/inc/mailsyslib.h; \
+	link ../../cnet/gamed/privilege.hxx iolib/inc/privilege.hxx; \
+	link ../../cnet/gamed/sellpointlib.h iolib/inc/sellpointlib.h; \
+	link ../../cnet/gamed/stocklib.h iolib/inc/stocklib.h; \
+	link ../../cnet/gamed/webtradesyslib.h iolib/inc/webtradesyslib.h; \
+	link ../../cnet/gamed/kingelectionsyslib.h iolib/inc/kingelectionsyslib.h; \
+	link ../../cnet/gamed/pshopsyslib.h iolib/inc/pshopsyslib.h; \
+	link ../cnet/io/libgsio.a iolib/libgsio.a; \
+	link ../cnet/gdbclient/libdbCli.a iolib/libdbCli.a; \
+	link ../cnet/gamed/libgsPro2.a iolib/libgsPro2.a; \
+	link ../cnet/logclient/liblogCli.a iolib/liblogCli.a; \
+	link ../cskill/skill/libskill.a iolib/libskill.a
 
 rpcgen:
 	cd cnet; \
-	./rpcgen rpcalls.xml; \
+	sh ./rpcgen rpcalls.xml; \
 	cd gfaction/operations; \
-	./opgen.pl; \
+	perl ./opgen.pl; \
 	cd ../../..; 
 
 subsskill:
@@ -201,18 +209,16 @@ clean-libdbCli:
 	cd ../..;
 
 clean-shared:
-	cd cnet; \
-	rm -f common; \
-	rm -f io; \
-	rm -f perf; \
-	rm -f mk; \
-	rm -f storage; \
-	rm -f rpc; \
-	rm -f rpcgen;
+	@set -eu; \
+	for name in common io perf mk storage rpc; do \
+		if [ -L "cnet/$$name" ]; then rm -f "cnet/$$name"; \
+		elif [ -e "cnet/$$name" ]; then \
+			echo "ERROR: cnet/$$name is not a symlink; refusing to remove it."; \
+			exit 1; \
+		fi; \
+	done
 
 clean-iolib:
-	cd iolib; \
-	cd inc; \
-	rm -f *; \
-	cd .. ;\
-	rm -f lib*; 
+	@set -eu; \
+	if [ -d iolib/inc ]; then find iolib/inc -mindepth 1 -maxdepth 1 -type l -delete; fi; \
+	if [ -d iolib ]; then find iolib -mindepth 1 -maxdepth 1 -type l -name 'lib*' -delete; fi
