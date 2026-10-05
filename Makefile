@@ -18,7 +18,7 @@ cleancnet: clean-libperf clean-subs
 configure: setrules configure-shared configure-iolib
 clean-configure: clean-shared clean-iolib
 
-libs: libgs libcommon
+libs: libcommon libgs
 clean-libs: clean-libgs clean-libcommon 
 
 install: build
@@ -42,9 +42,7 @@ install: build
 	cp ./cnet/logservice/logservice /home/logservice;
 
 libperf:
-	cd cnet/perf; \
-	make;  \
-	cd ../../
+	$(MAKE) -C cnet/perf
 
 clean-libperf:
 	cd cnet/perf; \
@@ -52,9 +50,7 @@ clean-libperf:
 	cd ../../
 
 libcommon:
-	cd cgame/libcommon; \
-	make -j8;  \
-	cd ../../
+	$(MAKE) -j8 -C cgame/libcommon
 
 clean-libcommon:
 	cd cgame/libcommon; \
@@ -62,14 +58,8 @@ clean-libcommon:
 	cd ../../
 
 libgs: libLogClient libgsio  libgsPro2 libdbCli
-	cd cgame/libgs; \
-	mkdir -p io; \
-	mkdir -p gs; \
-	mkdir -p db; \
-	mkdir -p sk; \
-	mkdir -p log; \
-	make
-	cd ../../
+	mkdir -p cgame/libgs/io cgame/libgs/gs cgame/libgs/db cgame/libgs/sk cgame/libgs/log
+	$(MAKE) -C cgame/libgs
 
 clean-libgs: clean-libgsio clean-libLogClient clean-libgsPro2 clean-libdbCli
 	cd cgame/libgs; \
@@ -77,10 +67,8 @@ clean-libgs: clean-libgsio clean-libLogClient clean-libgsPro2 clean-libdbCli
 	cd ../../
 
 gs:
-	cd cgame; \
-	make clean; \
-	make -j8; \
-	cd ..;
+	$(MAKE) -C cgame clean
+	$(MAKE) -j8 -C cgame
 	
 clean-gs:
 	cd cgame; \
@@ -143,6 +131,7 @@ rpcgen:
 	cd ../../..; 
 
 subsskill:
+	@set -eu; \
 	for dir in $(skilldir); do \
         $(MAKE) -C $$dir clean; \
         $(MAKE) -j8 -C $$dir; \
@@ -155,6 +144,7 @@ clean-subsskill:
 
 
 subs:
+	@set -eu; \
 	for dir in $(execdirs); do \
         $(MAKE) -C $$dir clean; \
         $(MAKE) -j8 -C $$dir; \
@@ -165,10 +155,11 @@ clean-subs:
         $(MAKE) -C $$dir clean; \
     done
 
-libgsio:
-	cd cnet/io; \
-	make lib; \
-	cd ../..;
+libshared-common:
+	$(MAKE) -C cnet/common octets.o thread.o conf.o timer.o itimer.o
+
+libgsio: libperf libshared-common
+	$(MAKE) -C cnet/io lib
 
 clean-libgsio:
 	cd cnet/io; \
