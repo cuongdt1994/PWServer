@@ -24,7 +24,7 @@ all : $(EXES)
 
 #$(OUTEROBJS_M) $(OBJS_M)
 
-lib:  FORCE
+lib: $(OUTEROBJS) $(OBJS)
 	$(AR) crs libgsio.a $(OUTEROBJS) $(OBJS)
 
 server: $(OUTEROBJS) $(OBJS) server.o
@@ -36,4 +36,3 @@ client: $(OUTEROBJS) $(OBJS) client.o
 FORCE:
 
 include ../mk/gcc.rules.mk
-
